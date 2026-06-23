@@ -1,0 +1,7 @@
+Usage:
+··test·[flags]
+
+Flags:
+······--name······················here·is·some·help·message
+··-a,·--age·······················here·as·well
+······--this-is-quite-a-long-flag·which·also·has·some·help·text

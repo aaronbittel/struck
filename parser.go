@@ -3,30 +3,27 @@ package struck
 import (
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
-	"unicode/utf8"
 )
 
 type Parser struct {
-	Name    string
 	command *Command
 	value   reflect.Value
 }
 
 func NewParser(schema any, name ...string) *Parser {
-	var parserName string
+	var cmdName string
 	switch len(name) {
 	case 0:
 		if len(os.Args) > 0 {
-			parserName = filepath.Base(os.Args[0])
+			cmdName = filepath.Base(os.Args[0])
 		}
 	case 1:
-		parserName = name[0]
+		cmdName = name[0]
 	default:
 		panic("the parser can only have one name")
 	}
@@ -36,9 +33,11 @@ func NewParser(schema any, name ...string) *Parser {
 		panic("give type must be a pointer to a struct")
 	}
 
+	command := ConstructCommand(t.Elem())
+	command.name = cmdName
+
 	return &Parser{
-		Name:    parserName,
-		command: ConstructCommand(t.Elem()),
+		command: command,
 		value:   reflect.ValueOf(schema).Elem(),
 	}
 }
@@ -49,7 +48,7 @@ var HelpRequested = errors.New("help requested")
 func (p *Parser) ParseArgs(args []string) error {
 	for _, arg := range args {
 		if arg == "--help" || arg == "-help" || arg == "-h" {
-			p.PrintHelp(os.Stdout)
+			p.command.PrintHelp(os.Stdout)
 			return HelpRequested
 		}
 	}
@@ -149,80 +148,4 @@ func (p *Parser) parseArgs(args []string) error {
 
 func hasNext(args []string, i int) bool {
 	return i+1 < len(args)
-}
-
-func (p *Parser) PrintHelp(w io.Writer) {
-	var sb strings.Builder
-
-	fmt.Fprintln(&sb, "Usage:")
-	fmt.Fprintf(&sb, "  %s", p.Name)
-	for _, arg := range p.command.positionals {
-		fmt.Fprintf(&sb, " <%s>", arg.Name)
-	}
-
-	if len(p.command.flags) > 0 {
-		fmt.Fprint(&sb, " [flags]\n")
-	}
-	fmt.Fprintln(&sb)
-
-	spaces := func(i int) string {
-		if i < 0 {
-			return ""
-		}
-		return strings.Repeat(" ", i)
-	}
-
-	if len(p.command.positionals) > 0 {
-		fmt.Fprintln(&sb, "Positionals:")
-		var maxPosLen int
-		for _, arg := range p.command.positionals {
-			maxPosLen = max(maxPosLen, utf8.RuneCountInString(arg.Name))
-		}
-
-		for _, arg := range p.command.positionals {
-			fmt.Fprintf(&sb, "  - %s%s %s\n", arg.Name, spaces(maxPosLen-utf8.RuneCountInString(arg.Name)), arg.Help)
-		}
-		fmt.Fprintln(&sb)
-	}
-
-	if len(p.command.flags) > 0 {
-		var (
-			maxShortLen = 0
-			maxLongLen  = 0
-		)
-		for _, flag := range p.command.flags {
-			var (
-				shortLen int
-				longLen  int
-			)
-			if flag.Short != "" {
-				shortLen = utf8.RuneCountInString(flag.Short) + 1 // + "-" before short flag
-			}
-			if flag.Long != "" {
-				longLen = utf8.RuneCountInString(flag.Long) + 2 // + "--" before long flag
-			}
-			maxShortLen = max(maxShortLen, shortLen)
-			maxLongLen = max(maxLongLen, longLen)
-		}
-
-		fmt.Fprintln(&sb, "Flags:")
-		for _, flag := range p.command.flags {
-			fmt.Fprintf(&sb, "  ")
-			if flag.Short != "" && flag.Long != "" {
-				fmt.Fprintf(&sb, "-%s,%s --%s%s",
-					flag.Short,
-					spaces(maxShortLen-utf8.RuneCountInString(flag.Short)-2), // "-" + ","
-					flag.Long,
-					spaces(maxLongLen-utf8.RuneCountInString(flag.Long)-2))
-			} else if flag.Short != "" {
-				fmt.Fprintf(&sb, "-%s %s",
-					flag.Short, spaces(maxShortLen-utf8.RuneCountInString(flag.Short)-1+maxLongLen))
-			} else {
-				fmt.Fprintf(&sb, "%s--%s%s", spaces(maxShortLen), flag.Long, spaces(maxLongLen-utf8.RuneCountInString(flag.Long)-2-1))
-			}
-			fmt.Fprintf(&sb, "%s\n", flag.Help)
-		}
-	}
-
-	fmt.Fprint(w, sb.String())
 }

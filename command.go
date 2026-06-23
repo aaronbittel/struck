@@ -2,8 +2,10 @@ package struck
 
 import (
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
+	"unicode/utf8"
 )
 
 var (
@@ -14,6 +16,7 @@ var (
 )
 
 type Command struct {
+	name        string
 	flags       []*Flag
 	positionals []*Positional
 }
@@ -69,4 +72,87 @@ func isFlag(tag reflect.StructTag) bool {
 	_, hasLong := tag.Lookup(TagLong)
 	_, hasShort := tag.Lookup(TagShort)
 	return hasLong || hasShort
+}
+
+func (cmd *Command) PrintHelp(w io.Writer) {
+	var sb strings.Builder
+
+	fmt.Fprintln(&sb, "Usage:")
+	fmt.Fprintf(&sb, "  %s", cmd.name)
+	for _, arg := range cmd.positionals {
+		fmt.Fprintf(&sb, " <%s>", arg.Name)
+	}
+
+	if len(cmd.flags) > 0 {
+		fmt.Fprint(&sb, " [flags]\n")
+	}
+	fmt.Fprintln(&sb)
+
+	spaces := func(i int) string {
+		if i < 0 {
+			return ""
+		}
+		return strings.Repeat(" ", i)
+	}
+
+	if len(cmd.positionals) > 0 {
+		fmt.Fprintln(&sb, "Positionals:")
+		var maxPosLen int
+		for _, arg := range cmd.positionals {
+			maxPosLen = max(maxPosLen, utf8.RuneCountInString(arg.Name))
+		}
+
+		for _, arg := range cmd.positionals {
+			fmt.Fprintf(&sb, "  - %s%s %s\n", arg.Name, spaces(maxPosLen-utf8.RuneCountInString(arg.Name)), arg.Help)
+		}
+		fmt.Fprintln(&sb)
+	}
+
+	shortFlags := false
+	for _, flag := range cmd.flags {
+		if flag.Short != "" {
+			shortFlags = true
+			break
+		}
+	}
+	maxShortLen, maxLongLen := cmd.maxShortAndLongLenths()
+
+	if len(cmd.flags) > 0 {
+		fmt.Fprintln(&sb, "Flags:")
+		for _, flag := range cmd.flags {
+			fmt.Fprintf(&sb, "  ")
+			switch {
+			case flag.OnlyLong():
+				shortSpaces := maxShortLen
+				if shortFlags {
+					shortSpaces += 1
+				}
+				fmt.Fprintf(&sb, "%s--%s%s",
+					spaces(shortSpaces),
+					flag.Long,
+					spaces(maxLongLen-flag.requiredLongHelpLen()))
+			case flag.OnlyShort():
+				fmt.Fprintf(&sb, "-%s %s",
+					flag.Short, spaces(maxShortLen-utf8.RuneCountInString(flag.Short)-1+maxLongLen))
+			case flag.LongAndShort():
+				fmt.Fprintf(&sb, "-%s,%s --%s%s",
+					flag.Short,
+					spaces(maxShortLen-flag.requiredShortHelpLen()),
+					flag.Long,
+					spaces(maxLongLen-flag.requiredLongHelpLen()))
+			}
+			// Without any help tags, the output would contain a trailing <space>.
+			fmt.Fprintf(&sb, " %s\n", flag.Help)
+		}
+	}
+
+	fmt.Fprint(w, sb.String())
+}
+
+func (cmd *Command) maxShortAndLongLenths() (maxShortLen int, maxLongLen int) {
+	for _, flag := range cmd.flags {
+		maxShortLen = max(maxShortLen, flag.requiredShortHelpLen())
+		maxLongLen = max(maxLongLen, flag.requiredLongHelpLen())
+	}
+	return maxShortLen, maxLongLen
 }

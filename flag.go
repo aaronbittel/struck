@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"unicode/utf8"
 )
 
 type Flag struct {
@@ -48,4 +49,36 @@ func (f Flag) String() string {
 	fmt.Fprintf(&sb, "index=%v ", f.FieldIndex)
 
 	return sb.String()
+}
+
+func (f Flag) requiredShortHelpLen() int {
+	if f.Short == "" {
+		return 0
+	}
+
+	if f.Long == "" {
+		return utf8.RuneCountInString(f.Short) + 1 // for "-"
+	}
+
+	return utf8.RuneCountInString(f.Short) + 1 + 1 // for "-", "," (short and long form are comma seperated)
+}
+
+func (f Flag) requiredLongHelpLen() int {
+	if f.Long == "" {
+		return 0
+	}
+
+	return utf8.RuneCountInString(f.Long) + 2 // for "--"
+}
+
+func (f Flag) OnlyShort() bool {
+	return f.Short != "" && f.Long == ""
+}
+
+func (f Flag) OnlyLong() bool {
+	return f.Short == "" && f.Long != ""
+}
+
+func (f Flag) LongAndShort() bool {
+	return f.Short != "" && f.Long != ""
 }
