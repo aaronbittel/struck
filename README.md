@@ -14,7 +14,7 @@ A command-line argument parser for Go using struct tags. Inspired by
 
 ## Installation
 ```console
-    go get github.com/aaronbittel/struck
+go get github.com/aaronbittel/struck
 ```
 
 ## Examples
