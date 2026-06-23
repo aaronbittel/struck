@@ -1,11 +1,14 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 )
+
+var HelpRequested = errors.New("help requested")
 
 func Parse(opts any, args ...string) error {
 	t := reflect.TypeOf(opts)
@@ -14,7 +17,12 @@ func Parse(opts any, args ...string) error {
 	}
 
 	command := ConstructCommand(t.Elem())
-	command.PrintHelp()
+	for _, arg := range args {
+		if arg == "--help" || arg == "-help" || arg == "-h" {
+			command.PrintHelp()
+			return HelpRequested
+		}
+	}
 
 	return parseArgs(reflect.ValueOf(opts).Elem(), command, args)
 }
