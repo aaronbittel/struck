@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+
+	"github.com/aaronbittel/struck"
 )
 
 type Options struct {
@@ -20,11 +22,13 @@ type Options struct {
 func main() {
 	var opts Options
 
+	parser := struck.NewParser(&opts)
+
 	args := []string{"-n", "bob", "--age", "23", "123.51", "--verbose", "`", "123"}
 
-	if err := Parse(&opts, args...); err != nil {
+	if err := parser.Parse(args...); err != nil {
 		switch {
-		case errors.Is(err, HelpRequested):
+		case errors.Is(err, struck.HelpRequested):
 			os.Exit(0)
 		default:
 			fmt.Fprintf(os.Stderr, "error: %s\n", err)

@@ -26,6 +26,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+
+	"github.com/aaronbittel/struck"
 )
 
 type Options struct {
@@ -40,9 +42,9 @@ func main() {
 
 	args := []string{"--name", "Bob", "--age", "42", "-v", "141.531"}
 
-	if err := Parse(&opts, args...); err != nil {
+	if err := struck.Parse("example", &opts, args...); err != nil {
 		switch {
-		case errors.Is(err, HelpRequested):
+		case errors.Is(err, struck.HelpRequested):
 			os.Exit(0)
 		default:
 			fmt.Fprintln(os.Stderr, err)
@@ -51,7 +53,6 @@ func main() {
 	}
 
 	if opts.Verbose {
-		// Prints: {Name:Bob Age:42 Verbose:true Input:141.531}
 		fmt.Printf("%+v\n", opts)
 	}
 }
@@ -94,26 +95,7 @@ Then:
 
 ## Example
 
-```go
-type Options struct {
-	Name    string  `long:"name" short:"n" help:"User name"`
-	Age     uint64  `long:"age" help:"User age"`
-	Verbose bool    `long:"verbose" short:"v" help:"Verbose output"`
-
-	Path string `arg:"path" help:"Input file path"`
-}
-
-`./app --name bob --age 23 --verbose ./file.txt`
-
-Result:
-
-Options{
-	Name: "bob",
-	Age: 23,
-	Verbose: true,
-	Path: "./file.txt",
-}
-```
+See [examples](./examples).
 
 ## Design Notes
 

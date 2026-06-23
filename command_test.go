@@ -1,4 +1,4 @@
-package main
+package struck
 
 import (
 	"reflect"
@@ -11,14 +11,14 @@ func TestParseStructIntoCommand(t *testing.T) {
 	tests := []struct {
 		name string
 		typ  reflect.Type
-		want *CommandSpec
+		want *Command
 	}{
 		{
 			name: "single string flag",
 			typ: reflect.TypeOf(struct {
 				Name string `long:"name"`
 			}{}),
-			want: &CommandSpec{
+			want: &Command{
 				flags: []*Flag{
 					{
 						Long:       "name",
