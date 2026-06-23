@@ -3,6 +3,7 @@ package struck
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -17,7 +18,7 @@ type Parser struct {
 	value   reflect.Value
 }
 
-func NewParser(struck any, name ...string) *Parser {
+func NewParser(schema any, name ...string) *Parser {
 	var parserName string
 	switch len(name) {
 	case 0:
@@ -30,7 +31,7 @@ func NewParser(struck any, name ...string) *Parser {
 		panic("the parser can only have one name")
 	}
 
-	t := reflect.TypeOf(struck)
+	t := reflect.TypeOf(schema)
 	if t.Kind() != reflect.Pointer || t.Elem().Kind() != reflect.Struct {
 		panic("give type must be a pointer to a struct")
 	}
@@ -38,20 +39,25 @@ func NewParser(struck any, name ...string) *Parser {
 	return &Parser{
 		Name:    parserName,
 		command: ConstructCommand(t.Elem()),
-		value:   reflect.ValueOf(struck).Elem(),
+		value:   reflect.ValueOf(schema).Elem(),
 	}
 }
 
+//lint:ignore ST1012 sentinel value used for control flow (like io.EOF); intentionally not prefixed with Err
 var HelpRequested = errors.New("help requested")
 
-func (p *Parser) Parse(args ...string) error {
+func (p *Parser) ParseArgs(args []string) error {
 	for _, arg := range args {
 		if arg == "--help" || arg == "-help" || arg == "-h" {
-			p.PrintHelp()
+			p.PrintHelp(os.Stdout)
 			return HelpRequested
 		}
 	}
 	return p.parseArgs(args)
+}
+
+func (p *Parser) Parse() error {
+	return p.ParseArgs(os.Args[1:])
 }
 
 func (p *Parser) parseArgs(args []string) error {
@@ -131,7 +137,7 @@ func (p *Parser) parseArgs(args []string) error {
 
 	if positionalArgIndex < len(p.command.positionals) {
 		var sb strings.Builder
-		sb.WriteString("missing values for the following positionals arugments:\n")
+		sb.WriteString("missing values for the following positionals arguments:\n")
 		for ; positionalArgIndex < len(p.command.positionals); positionalArgIndex++ {
 			fmt.Fprintf(&sb, "  - %q\n", p.command.positionals[positionalArgIndex].Name)
 		}
@@ -145,7 +151,7 @@ func hasNext(args []string, i int) bool {
 	return i+1 < len(args)
 }
 
-func (p *Parser) PrintHelp() {
+func (p *Parser) PrintHelp(w io.Writer) {
 	var sb strings.Builder
 
 	fmt.Fprintln(&sb, "Usage:")
@@ -160,6 +166,9 @@ func (p *Parser) PrintHelp() {
 	fmt.Fprintln(&sb)
 
 	spaces := func(i int) string {
+		if i < 0 {
+			return ""
+		}
 		return strings.Repeat(" ", i)
 	}
 
@@ -209,11 +218,11 @@ func (p *Parser) PrintHelp() {
 				fmt.Fprintf(&sb, "-%s %s",
 					flag.Short, spaces(maxShortLen-utf8.RuneCountInString(flag.Short)-1+maxLongLen))
 			} else {
-				fmt.Fprintf(&sb, "%s --%s%s ", spaces(maxShortLen), flag.Long, spaces(maxLongLen-utf8.RuneCountInString(flag.Long)-2-1))
+				fmt.Fprintf(&sb, "%s--%s%s", spaces(maxShortLen), flag.Long, spaces(maxLongLen-utf8.RuneCountInString(flag.Long)-2-1))
 			}
-			fmt.Fprintf(&sb, " %s\n", flag.Help)
+			fmt.Fprintf(&sb, "%s\n", flag.Help)
 		}
 	}
 
-	fmt.Println(sb.String())
+	fmt.Fprint(w, sb.String())
 }

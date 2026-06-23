@@ -20,9 +20,7 @@ func main() {
 
 	parser := struck.NewParser(&opts)
 
-	args := []string{"--name", "Bob", "--age", "42", "-v", "141.531"}
-
-	if err := parser.Parse(args...); err != nil {
+	if err := parser.Parse(); err != nil {
 		switch {
 		case errors.Is(err, struck.HelpRequested):
 			os.Exit(0)

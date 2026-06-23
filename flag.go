@@ -14,14 +14,6 @@ type Flag struct {
 	Help       string
 }
 
-type emptyStructTag struct {
-	name string
-}
-
-func (e emptyStructTag) Error() string {
-	return fmt.Sprintf("struct tag %q must not be empty", e.name)
-}
-
 func FlagFromField(field reflect.StructField) *Flag {
 	return &Flag{
 		Long:       field.Tag.Get(TagLong),

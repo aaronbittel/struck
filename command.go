@@ -14,8 +14,6 @@ var (
 )
 
 type Command struct {
-	name string
-
 	flags       []*Flag
 	positionals []*Positional
 }

@@ -52,9 +52,9 @@ func (p ParseError) Error() string {
 		case KindPositional:
 			return fmt.Sprintf("missing required argument: %s", p.name)
 		default:
-			return fmt.Sprintf("missing required value")
+			return "missing required value"
 		}
 	default:
-		return fmt.Sprintf("%s", p.err.Error())
+		return p.err.Error()
 	}
 }

@@ -15,9 +15,9 @@ func TestParseStructIntoCommand(t *testing.T) {
 	}{
 		{
 			name: "single string flag",
-			typ: reflect.TypeOf(struct {
-				Name string `long:"name"`
-			}{}),
+			typ: reflect.TypeFor[struct {
+				Name string "long:\"name\""
+			}](),
 			want: &Command{
 				flags: []*Flag{
 					{
@@ -38,4 +38,4 @@ func TestParseStructIntoCommand(t *testing.T) {
 	}
 }
 
-var StringType = reflect.TypeOf("")
+var StringType = reflect.TypeFor[string]()
