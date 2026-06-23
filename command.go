@@ -9,8 +9,8 @@ import (
 type CommandSpec struct {
 	name string
 
-	flags           []*Flag
-	positionalsArgs []*Positional
+	flags          []*Flag
+	positionalArgs []*Positional
 }
 
 func ConstructCommand(t reflect.Type) *CommandSpec {
@@ -33,7 +33,7 @@ func ConstructCommand(t reflect.Type) *CommandSpec {
 		if isFlag {
 			command.flags = append(command.flags, FlagFromField(field))
 		} else {
-			command.positionalsArgs = append(command.positionalsArgs, NewPositionalFromField(field))
+			command.positionalArgs = append(command.positionalArgs, NewPositionalFromField(field))
 		}
 	}
 

@@ -11,12 +11,14 @@ type Options struct {
 	Age     uint64  `long:"--age"`
 	Verbose bool    `long:"--verbose" short:"-v"`
 	Pos1    float32 `arg:"pos"`
+	Pos2    byte
+	Pos3    uint8
 }
 
 func main() {
 	var opts Options
 
-	args := []string{"-n", "bob", "--age", "23", "123.51", "--verbose"}
+	args := []string{"-n", "bob", "--age", "23", "123.51", "--verbose", "`", "123"}
 
 	if err := Parse(&opts, args...); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %s\n", err)

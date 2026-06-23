@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 func Parse(opts any, args ...string) error {
@@ -54,11 +55,11 @@ func parseArgs(v reflect.Value, command *CommandSpec, args []string) error {
 				panic(fmt.Sprintf("type %s is not yet supported", flag.Type.Kind()))
 			}
 		} else {
-			if positionalArgIndex >= len(command.positionalsArgs) {
+			if positionalArgIndex >= len(command.positionalArgs) {
 				return fmt.Errorf("TODO: to manny positional arguments, arg=%q", currentArg)
 			}
 
-			positionalArg := command.positionalsArgs[positionalArgIndex]
+			positionalArg := command.positionalArgs[positionalArgIndex]
 
 			switch positionalArg.Type.Kind() {
 			case reflect.Float32:
@@ -67,11 +68,32 @@ func parseArgs(v reflect.Value, command *CommandSpec, args []string) error {
 					return fmt.Errorf("TODO: could not parse f32: got %q", currentArg)
 				}
 				v.FieldByIndex(positionalArg.FieldIndex).SetFloat(f64)
+			case reflect.Uint8:
+				if len(currentArg) == 1 && (currentArg[0] < '0' || currentArg[0] > '9') {
+					v.FieldByIndex(positionalArg.FieldIndex).SetUint(uint64(currentArg[0]))
+				} else {
+					n, err := strconv.ParseUint(currentArg, 10, 8)
+					if err != nil {
+						return fmt.Errorf("TODO: could not parse int, got: %q", currentArg)
+					}
+					v.FieldByIndex(positionalArg.FieldIndex).SetUint(n)
+				}
+			default:
+				panic(fmt.Sprintf("type %s is not yet supported", positionalArg.Type.Kind()))
 			}
 
 			i += 1
 			positionalArgIndex += 1
 		}
+	}
+
+	if positionalArgIndex < len(command.positionalArgs) {
+		var sb strings.Builder
+		sb.WriteString("missing values for the following positionals arugments:\n")
+		for ; positionalArgIndex < len(command.positionalArgs); positionalArgIndex++ {
+			fmt.Fprintf(&sb, "  - %q\n", command.positionalArgs[positionalArgIndex].Name)
+		}
+		return fmt.Errorf(sb.String())
 	}
 
 	return nil
