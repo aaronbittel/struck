@@ -3,23 +3,49 @@ package main
 import (
 	"fmt"
 	"os"
+	"reflect"
 )
 
 type Options struct {
-	Name string  `long:"name" short:"n"`
-	Age  uint64  `long:"age"`
-	Pos1 float32 `arg:"pos"`
+	Name    string  `long:"--name" short:"-n"`
+	Age     uint64  `long:"--age"`
+	Verbose bool    `long:"--verbose" short:"-v"`
+	Pos1    float32 `arg:"pos"`
 }
 
 func main() {
 	var opts Options
 
-	args := []string{"-n", "bob", "--age", "23", "123.51"}
+	args := []string{"-n", "bob", "--age", "23", "123.51", "--verbose"}
 
 	if err := Parse(&opts, args...); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %s\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Println(opts)
+	if opts.Verbose {
+		fmt.Println(opts)
+	}
+}
+
+func information(t reflect.Type) {
+	fmt.Println(t)
+	fmt.Println("name", t.Name())
+	fmt.Println("kind", t.Kind())
+
+	if hasElem(t) {
+		fmt.Println("  elem  ", t.Elem())
+		fmt.Println("    kind", t.Elem().Kind())
+	}
+
+	fmt.Println("=========================================")
+}
+
+func hasElem(t reflect.Type) bool {
+	switch t.Kind() {
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Pointer, reflect.Slice:
+		return true
+	default:
+		return false
+	}
 }
