@@ -14,6 +14,7 @@ func Parse(opts any, args ...string) error {
 	}
 
 	command := ConstructCommand(t.Elem())
+	command.PrintHelp()
 
 	return parseArgs(reflect.ValueOf(opts).Elem(), command, args)
 }
@@ -55,11 +56,11 @@ func parseArgs(v reflect.Value, command *CommandSpec, args []string) error {
 				panic(fmt.Sprintf("type %s is not yet supported", flag.Type.Kind()))
 			}
 		} else {
-			if positionalArgIndex >= len(command.positionalArgs) {
+			if positionalArgIndex >= len(command.positionals) {
 				return fmt.Errorf("TODO: to manny positional arguments, arg=%q", currentArg)
 			}
 
-			positionalArg := command.positionalArgs[positionalArgIndex]
+			positionalArg := command.positionals[positionalArgIndex]
 
 			switch positionalArg.Type.Kind() {
 			case reflect.Float32:
@@ -78,6 +79,12 @@ func parseArgs(v reflect.Value, command *CommandSpec, args []string) error {
 					}
 					v.FieldByIndex(positionalArg.FieldIndex).SetUint(n)
 				}
+			case reflect.Uint64:
+				n, err := strconv.ParseUint(currentArg, 10, 64)
+				if err != nil {
+					return fmt.Errorf("TODO: could not parse int, got: %q", currentArg)
+				}
+				v.FieldByIndex(positionalArg.FieldIndex).SetUint(n)
 			default:
 				panic(fmt.Sprintf("type %s is not yet supported", positionalArg.Type.Kind()))
 			}
@@ -87,11 +94,11 @@ func parseArgs(v reflect.Value, command *CommandSpec, args []string) error {
 		}
 	}
 
-	if positionalArgIndex < len(command.positionalArgs) {
+	if positionalArgIndex < len(command.positionals) {
 		var sb strings.Builder
 		sb.WriteString("missing values for the following positionals arugments:\n")
-		for ; positionalArgIndex < len(command.positionalArgs); positionalArgIndex++ {
-			fmt.Fprintf(&sb, "  - %q\n", command.positionalArgs[positionalArgIndex].Name)
+		for ; positionalArgIndex < len(command.positionals); positionalArgIndex++ {
+			fmt.Fprintf(&sb, "  - %q\n", command.positionals[positionalArgIndex].Name)
 		}
 		return fmt.Errorf(sb.String())
 	}

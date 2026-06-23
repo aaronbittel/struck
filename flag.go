@@ -11,6 +11,7 @@ type Flag struct {
 	Short      string
 	Type       reflect.Type
 	FieldIndex []int
+	Help       string
 }
 
 type emptyStructTag struct {
@@ -22,23 +23,12 @@ func (e emptyStructTag) Error() string {
 }
 
 func FlagFromField(field reflect.StructField) *Flag {
-	var long string
-	longTag, ok := field.Tag.Lookup("long")
-	if ok && longTag != "" {
-		long = longTag
-	}
-
-	var short string
-	shortTag, ok := field.Tag.Lookup("short")
-	if ok && shortTag != "" {
-		short = shortTag
-	}
-
 	return &Flag{
-		Long:       long,
-		Short:      short,
+		Long:       field.Tag.Get(TagLong),
+		Short:      field.Tag.Get(TagShort),
 		Type:       field.Type,
 		FieldIndex: field.Index,
+		Help:       field.Tag.Get(TagHelp),
 	}
 }
 

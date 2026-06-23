@@ -7,12 +7,13 @@ import (
 )
 
 type Options struct {
-	Name    string  `long:"--name" short:"-n"`
-	Age     uint64  `long:"--age"`
-	Verbose bool    `long:"--verbose" short:"-v"`
-	Pos1    float32 `arg:"pos"`
-	Pos2    byte
-	Pos3    uint8
+	Name               string  `long:"name" short:"n" help:"name input"`
+	Age                uint64  `long:"age" help:"specificy the age" age:"no conflict"`
+	Verbose            bool    `long:"verbose" short:"v" help:"if set output verbosely"`
+	Dummy              string  `short:"asdf" long:""`
+	Pos1               float32 `arg:"pos" help:"just some pos f32"`
+	Pos2sdjfköajsödfas byte    `help:"this is some help text for pos2"`
+	Pos3               uint8
 }
 
 func main() {

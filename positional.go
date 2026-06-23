@@ -6,6 +6,7 @@ type Positional struct {
 	Name       string
 	Type       reflect.Type
 	FieldIndex []int
+	Help       string
 }
 
 func NewPositionalFromField(field reflect.StructField) *Positional {
@@ -18,5 +19,6 @@ func NewPositionalFromField(field reflect.StructField) *Positional {
 		Name:       name,
 		Type:       field.Type,
 		FieldIndex: field.Index,
+		Help:       field.Tag.Get("help"),
 	}
 }
