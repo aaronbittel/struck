@@ -89,9 +89,6 @@ func (cmd *Command) PrintHelp(w io.Writer) {
 	fmt.Fprintf(&sb, "\n\n")
 
 	spaces := func(i int) string {
-		if i < 0 {
-			return ""
-		}
 		return strings.Repeat(" ", i)
 	}
 
