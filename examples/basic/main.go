@@ -8,7 +8,7 @@ import (
 	"github.com/aaronbittel/struck"
 )
 
-type Options struct {
+type BasicOptions struct {
 	Name    string  `long:"name" short:"n" help:"User name"`
 	Age     uint64  `long:"age" help:"User age"`
 	Verbose bool    `long:"verbose" short:"v" help:"Enable verbose output"`
@@ -16,7 +16,7 @@ type Options struct {
 }
 
 func main() {
-	var opts Options
+	var opts BasicOptions
 
 	parser := struck.NewParser(&opts)
 
