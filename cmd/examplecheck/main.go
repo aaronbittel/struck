@@ -24,7 +24,7 @@ var examples = []*example{
 	},
 	&example{
 		dirname: "slices",
-		args:    []string{"-v", "true", "--verbose", "t", "--verbose", "1", "--name", "Alice", "-n", "Charlie"},
+		args:    []string{"-v", "--verbose", "--verbose", "--name", "Alice", "-n", "Charlie"},
 		want:    "🎉 A most magnificent welcome to Bob, Alice, Charlie! Thank you for gracing this humble program with your presence. 🎉",
 	},
 }

@@ -72,6 +72,12 @@ func (p *Parser) parseArgs(args []string) error {
 				continue
 			}
 
+			if p.ValueByIndex(flag.FieldIndex).Kind() == reflect.Slice && p.ValueByIndex(flag.FieldIndex).Type().Elem().Kind() == reflect.Bool {
+				p.ValueByIndex(flag.FieldIndex).Set(reflect.Append(p.ValueByIndex(flag.FieldIndex), reflect.ValueOf(true)))
+				i++
+				continue
+			}
+
 			if !hasNext(args, i) {
 				return fmt.Errorf("TODO: value for flag %q not provided", flag.Name())
 			}

@@ -31,12 +31,6 @@ func main() {
 		}
 	}
 
-	// TODO: currently each slice needs a value, so greet Bob, Alice and Charlie with
-	// verbosity 3, you would need to call it like this:
-	// go run ./examples/slices.go -v true --verbose true --verbose true --name alice -n charlie
-	// here it would not matter if you put "true" or "false" because we just take the
-	// length of the verbosity slice
-
 	switch len(opts.Verbosity) {
 	case 0:
 		fmt.Println("hello")
