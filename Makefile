@@ -1,3 +1,5 @@
+COVERAGE=/tmp/struck/coverage.out
+
 # ==================================================================================== #
 # HELPERS
 # ==================================================================================== #
@@ -11,6 +13,31 @@ help:
 .PHONY: confirm
 confirm:
 	@echo -n 'Are you sure [y/N] ' && read ans && [ $${ans:-N} = y ]
+
+# ==================================================================================== #
+# TESTING
+# ==================================================================================== #
+
+## test: run all tests
+.PHONY: test
+test:
+	go test ./...
+
+## cover: run tests and generate a coverage profile file
+.PHONY: cover
+cover:
+	@mkdir -p $(dir $(COVERAGE))
+	go test ./... -coverprofile=$(COVERAGE)
+
+## cover/func: display coverage breakdown per function
+.PHONY: cover/func
+cover/func: cover
+	go tool cover -func=$(COVERAGE)
+
+## cover/html: generate and open HTML coverage report
+.PHONY: cover/html
+cover/html: cover
+	go tool cover -html=$(COVERAGE)
 
 # ==================================================================================== #
 # QUALITY CONTROL
