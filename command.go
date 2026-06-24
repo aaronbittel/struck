@@ -84,9 +84,9 @@ func (cmd *Command) PrintHelp(w io.Writer) {
 	}
 
 	if len(cmd.flags) > 0 {
-		fmt.Fprint(&sb, " [flags]\n")
+		fmt.Fprint(&sb, " [flags]")
 	}
-	fmt.Fprintln(&sb)
+	fmt.Fprintf(&sb, "\n\n")
 
 	spaces := func(i int) string {
 		if i < 0 {
@@ -133,7 +133,7 @@ func (cmd *Command) PrintHelp(w io.Writer) {
 					spaces(maxLongLen-flag.requiredLongHelpLen()))
 			case flag.OnlyShort():
 				fmt.Fprintf(&sb, "-%s %s",
-					flag.Short, spaces(maxShortLen-utf8.RuneCountInString(flag.Short)-1+maxLongLen))
+					flag.Short, spaces(maxShortLen-flag.requiredShortHelpLen()+maxLongLen))
 			case flag.LongAndShort():
 				fmt.Fprintf(&sb, "-%s,%s --%s%s",
 					flag.Short,
@@ -141,7 +141,7 @@ func (cmd *Command) PrintHelp(w io.Writer) {
 					flag.Long,
 					spaces(maxLongLen-flag.requiredLongHelpLen()))
 			}
-			// Without any help tags, the output would contain a trailing <space>.
+			// Without any help tags, the output will contain a trailing <space>.
 			fmt.Fprintf(&sb, " %s\n", flag.Help)
 		}
 	}

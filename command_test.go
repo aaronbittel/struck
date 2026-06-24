@@ -96,6 +96,50 @@ func TestPrintHelp(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "different short lengths",
+			cmd: &Command{
+				name: "test",
+				flags: []*Flag{
+					&Flag{Short: "name", Help: "here is some help message"},
+					&Flag{Short: "age"},
+					&Flag{Short: "z", Help: "xxx"},
+				},
+			},
+		},
+		{
+			name: "positionals",
+			cmd: &Command{
+				name: "test",
+				positionals: []*Positional{
+					&Positional{Name: "ArgNotSet", Help: "here was no `arg` tag set"},
+					&Positional{Name: "age"},
+					&Positional{Name: "justAnotherPositional"},
+					&Positional{Name: "z", Help: "xxx"},
+				},
+			},
+		},
+		{
+			name: "comprehensive list of arguments",
+			cmd: &Command{
+				name: "deploy",
+				flags: []*Flag{
+					{Long: "verboseFlaggg", Short: "v", Help: "Enable verbose output"},
+					{Long: "config", Help: "Path to configuration file"},
+					{Short: "q", Help: "Quiet mode"},
+					{Long: "force", Short: "f"},
+					{Long: "dry-run", Help: "dry-run"},
+					{Short: "x"},
+					{Long: "outputoutputoutput", Short: "o", Help: "Write generated artifacts to the specified directory"},
+				},
+				positionals: []*Positional{
+					{Name: "source", Help: "Source directory"},
+					{Name: "target"},
+					{Name: "environment", Help: "Deployment environment"},
+					{Name: "version", Help: ""},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

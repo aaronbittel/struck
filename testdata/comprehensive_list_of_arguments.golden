@@ -1,0 +1,17 @@
+Usage:
+··deploy·<source>·<target>·<environment>·<version>·[flags]
+
+Positionals:
+··-·source······Source·directory
+··-·target······
+··-·environment·Deployment·environment
+··-·version·····
+
+Flags:
+··-v,·--verboseFlaggg······Enable·verbose·output
+······--config·············Path·to·configuration·file
+··-q·······················Quiet·mode
+··-f,·--force··············
+······--dry-run············dry-run
+··-x·······················
+··-o,·--outputoutputoutput·Write·generated·artifacts·to·the·specified·directory
