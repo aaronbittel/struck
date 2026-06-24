@@ -19,10 +19,11 @@ func TestParseStructIntoCommand(t *testing.T) {
 		{
 			name: "single string flag",
 			typ: reflect.TypeFor[struct {
-				Name string "long:\"name\""
+				Name string `long:"name"`
 			}](),
 			want: &Command{
-				flags: []*Flag{
+				Name: "Test",
+				Flags: []*Flag{
 					{Long: "name", FieldIndex: []int{0}},
 				},
 			},
@@ -31,8 +32,14 @@ func TestParseStructIntoCommand(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := ConstructCommand(tt.typ)
-			assert.Equal(t, tt.want, got)
+			schema := reflect.New(tt.typ).Elem()
+			got := NewCommand("Test", schema)
+
+			assert.Equal(t, tt.want.Name, got.Name)
+			assert.Equal(t, tt.want.Flags, got.Flags)
+			assert.Equal(t, tt.want.Positionals, got.Positionals)
+
+			assert.Equal(t, tt.typ, got.Schema.Type())
 		})
 	}
 }
@@ -47,15 +54,15 @@ func TestPrintHelp(t *testing.T) {
 		{
 			name: "single long flag",
 			cmd: &Command{
-				name:  "test",
-				flags: []*Flag{&Flag{Long: "name"}},
+				Name:  "test",
+				Flags: []*Flag{&Flag{Long: "name"}},
 			},
 		},
 		{
 			name: "two long flags",
 			cmd: &Command{
-				name: "test",
-				flags: []*Flag{
+				Name: "test",
+				Flags: []*Flag{
 					&Flag{Long: "name"},
 					&Flag{Long: "age", Short: "a"},
 				},
@@ -64,8 +71,8 @@ func TestPrintHelp(t *testing.T) {
 		{
 			name: "two long flags with help",
 			cmd: &Command{
-				name: "test",
-				flags: []*Flag{
+				Name: "test",
+				Flags: []*Flag{
 					&Flag{Long: "name", Help: "here is some help message"},
 					&Flag{Long: "age", Short: "a", Help: "here as well"},
 				},
@@ -74,8 +81,8 @@ func TestPrintHelp(t *testing.T) {
 		{
 			name: "long flag name",
 			cmd: &Command{
-				name: "test",
-				flags: []*Flag{
+				Name: "test",
+				Flags: []*Flag{
 					&Flag{Long: "name", Help: "here is some help message"},
 					&Flag{Long: "age", Short: "a", Help: "here as well"},
 					&Flag{Long: "this-is-quite-a-long-flag", Help: "which also has some help text"},
@@ -85,8 +92,8 @@ func TestPrintHelp(t *testing.T) {
 		{
 			name: "short flag with more than one character",
 			cmd: &Command{
-				name: "test",
-				flags: []*Flag{
+				Name: "test",
+				Flags: []*Flag{
 					&Flag{Long: "name", Short: "longer", Help: "here is some help message"},
 					&Flag{Long: "age", Short: "a", Help: "here as well"},
 				},
@@ -95,8 +102,8 @@ func TestPrintHelp(t *testing.T) {
 		{
 			name: "different short lengths",
 			cmd: &Command{
-				name: "test",
-				flags: []*Flag{
+				Name: "test",
+				Flags: []*Flag{
 					&Flag{Short: "name", Help: "here is some help message"},
 					&Flag{Short: "age"},
 					&Flag{Short: "z", Help: "xxx"},
@@ -106,8 +113,8 @@ func TestPrintHelp(t *testing.T) {
 		{
 			name: "positionals",
 			cmd: &Command{
-				name: "test",
-				positionals: []*Positional{
+				Name: "test",
+				Positionals: []*Positional{
 					&Positional{Name: "ArgNotSet", Help: "here was no `arg` tag set"},
 					&Positional{Name: "age"},
 					&Positional{Name: "justAnotherPositional"},
@@ -118,8 +125,8 @@ func TestPrintHelp(t *testing.T) {
 		{
 			name: "comprehensive list of arguments",
 			cmd: &Command{
-				name: "deploy",
-				flags: []*Flag{
+				Name: "deploy",
+				Flags: []*Flag{
 					{Long: "verboseFlaggg", Short: "v", Help: "Enable verbose output"},
 					{Long: "config", Help: "Path to configuration file"},
 					{Short: "q", Help: "Quiet mode"},
@@ -128,7 +135,7 @@ func TestPrintHelp(t *testing.T) {
 					{Short: "x"},
 					{Long: "outputoutputoutput", Short: "o", Help: "Write generated artifacts to the specified directory"},
 				},
-				positionals: []*Positional{
+				Positionals: []*Positional{
 					{Name: "source", Help: "Source directory"},
 					{Name: "target"},
 					{Name: "environment", Help: "Deployment environment"},

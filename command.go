@@ -16,19 +16,22 @@ var (
 )
 
 type Command struct {
-	name        string
-	flags       []*Flag
-	positionals []*Positional
+	Name        string
+	Schema      reflect.Value
+	Flags       []*Flag
+	Positionals []*Positional
 }
 
-func ConstructCommand(t reflect.Type) *Command {
-	if t.Kind() != reflect.Struct {
-		panic(fmt.Sprintf("ConstructCommand must be called with a \"struct\" got %q", t.Kind()))
+func NewCommand(name string, schema reflect.Value) *Command {
+	if schema.Kind() != reflect.Struct {
+		panic(fmt.Sprintf("must be called with a \"struct\" got %q", schema.Kind()))
 	}
 
 	command := new(Command)
+	command.Name = name
+	command.Schema = schema
 
-	for field := range t.Fields() {
+	for field := range schema.Fields() {
 		if !field.IsExported() {
 			continue
 		}
@@ -40,9 +43,9 @@ func ConstructCommand(t reflect.Type) *Command {
 		}
 
 		if isFlag(field.Tag) {
-			command.flags = append(command.flags, FlagFromField(field))
+			command.Flags = append(command.Flags, FlagFromField(field))
 		} else {
-			command.positionals = append(command.positionals, NewPositionalFromField(field))
+			command.Positionals = append(command.Positionals, NewPositionalFromField(field))
 		}
 	}
 
@@ -50,7 +53,7 @@ func ConstructCommand(t reflect.Type) *Command {
 }
 
 func (cmd *Command) matchesFlag(arg string) (*Flag, bool) {
-	for _, flag := range cmd.flags {
+	for _, flag := range cmd.Flags {
 		if strings.HasPrefix(arg, "--") && arg[2:] == flag.Long {
 			return flag, true
 		}
@@ -78,12 +81,12 @@ func (cmd *Command) PrintHelp(w io.Writer) {
 	var sb strings.Builder
 
 	fmt.Fprintln(&sb, "Usage:")
-	fmt.Fprintf(&sb, "  %s", cmd.name)
-	for _, arg := range cmd.positionals {
+	fmt.Fprintf(&sb, "  %s", cmd.Name)
+	for _, arg := range cmd.Positionals {
 		fmt.Fprintf(&sb, " <%s>", arg.Name)
 	}
 
-	if len(cmd.flags) > 0 {
+	if len(cmd.Flags) > 0 {
 		fmt.Fprint(&sb, " [flags]")
 	}
 	fmt.Fprintf(&sb, "\n\n")
@@ -92,21 +95,21 @@ func (cmd *Command) PrintHelp(w io.Writer) {
 		return strings.Repeat(" ", i)
 	}
 
-	if len(cmd.positionals) > 0 {
+	if len(cmd.Positionals) > 0 {
 		fmt.Fprintln(&sb, "Positionals:")
 		var maxPosLen int
-		for _, arg := range cmd.positionals {
+		for _, arg := range cmd.Positionals {
 			maxPosLen = max(maxPosLen, utf8.RuneCountInString(arg.Name))
 		}
 
-		for _, arg := range cmd.positionals {
+		for _, arg := range cmd.Positionals {
 			fmt.Fprintf(&sb, "  - %s%s %s\n", arg.Name, spaces(maxPosLen-utf8.RuneCountInString(arg.Name)), arg.Help)
 		}
 		fmt.Fprintln(&sb)
 	}
 
 	shortFlags := false
-	for _, flag := range cmd.flags {
+	for _, flag := range cmd.Flags {
 		if flag.Short != "" {
 			shortFlags = true
 			break
@@ -114,9 +117,9 @@ func (cmd *Command) PrintHelp(w io.Writer) {
 	}
 	maxShortLen, maxLongLen := cmd.maxShortAndLongLenths()
 
-	if len(cmd.flags) > 0 {
+	if len(cmd.Flags) > 0 {
 		fmt.Fprintln(&sb, "Flags:")
-		for _, flag := range cmd.flags {
+		for _, flag := range cmd.Flags {
 			fmt.Fprintf(&sb, "  ")
 			switch {
 			case flag.OnlyLong():
@@ -147,7 +150,7 @@ func (cmd *Command) PrintHelp(w io.Writer) {
 }
 
 func (cmd *Command) maxShortAndLongLenths() (maxShortLen int, maxLongLen int) {
-	for _, flag := range cmd.flags {
+	for _, flag := range cmd.Flags {
 		maxShortLen = max(maxShortLen, flag.requiredShortHelpLen())
 		maxLongLen = max(maxLongLen, flag.requiredLongHelpLen())
 	}

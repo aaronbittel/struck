@@ -3,6 +3,7 @@ module github.com/aaronbittel/struck
 go 1.26.4
 
 require (
+	github.com/google/go-cmp v0.7.0
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/stretchr/testify v1.11.1
 )

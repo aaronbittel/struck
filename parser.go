@@ -3,6 +3,7 @@ package struck
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -10,8 +11,9 @@ import (
 )
 
 type Parser struct {
-	command *Command
-	schema  reflect.Value
+	Root        *Command
+	Subcommands []*Command
+	Output      io.Writer
 }
 
 func NewParser(schema any, name ...string) *Parser {
@@ -32,12 +34,12 @@ func NewParser(schema any, name ...string) *Parser {
 		panic("give type must be a pointer to a struct")
 	}
 
-	command := ConstructCommand(t.Elem())
-	command.name = cmdName
+	command := NewCommand(cmdName, reflect.ValueOf(schema).Elem())
 
 	return &Parser{
-		command: command,
-		schema:  reflect.ValueOf(schema).Elem(),
+		Root:        command,
+		Subcommands: []*Command{},
+		Output:      os.Stdout,
 	}
 }
 
@@ -45,12 +47,6 @@ func NewParser(schema any, name ...string) *Parser {
 var HelpRequested = errors.New("help requested")
 
 func (p *Parser) ParseArgs(args []string) error {
-	for _, arg := range args {
-		if arg == "--help" || arg == "-help" || arg == "-h" {
-			p.command.PrintHelp(os.Stdout)
-			return HelpRequested
-		}
-	}
 	return p.parseArgs(args)
 }
 
@@ -58,14 +54,28 @@ func (p *Parser) Parse() error {
 	return p.ParseArgs(os.Args[1:])
 }
 
+// TODO: check if arg starts with "--" or "-" and match against flags, if none match
+// return "no such flag" error. Else match against positional.
 func (p *Parser) parseArgs(args []string) error {
+	for _, arg := range args {
+		if arg == "--help" || arg == "-help" || arg == "-h" {
+			p.Root.PrintHelp(p.Output)
+			return HelpRequested
+		}
+	}
+
 	positionalArgIndex := 0
 
 	i := 0
 	for i < len(args) {
 		currentArg := args[i]
-		flag, ok := p.command.matchesFlag(currentArg)
-		if ok {
+
+		if strings.HasPrefix(currentArg, "--") || strings.HasPrefix(currentArg, "-") {
+			flag, ok := p.Root.matchesFlag(currentArg)
+			if !ok {
+				return fmt.Errorf("unknown flag %q", currentArg)
+			}
+
 			if p.ValueByIndex(flag.FieldIndex).Kind() == reflect.Bool {
 				p.ValueByIndex(flag.FieldIndex).SetBool(true)
 				i++
@@ -88,11 +98,11 @@ func (p *Parser) parseArgs(args []string) error {
 			}
 			i += 2
 		} else {
-			if positionalArgIndex >= len(p.command.positionals) {
+			if positionalArgIndex >= len(p.Root.Positionals) {
 				return fmt.Errorf("TODO: to manny positional arguments, arg=%q", currentArg)
 			}
 
-			positionalArg := p.command.positionals[positionalArgIndex]
+			positionalArg := p.Root.Positionals[positionalArgIndex]
 
 			err := SetValue(p.ValueByIndex(positionalArg.FieldIndex), currentArg)
 			if err != nil {
@@ -104,11 +114,11 @@ func (p *Parser) parseArgs(args []string) error {
 		}
 	}
 
-	if positionalArgIndex < len(p.command.positionals) {
+	if positionalArgIndex < len(p.Root.Positionals) {
 		var sb strings.Builder
 		sb.WriteString("missing values for the following positionals arguments:\n")
-		for ; positionalArgIndex < len(p.command.positionals); positionalArgIndex++ {
-			fmt.Fprintf(&sb, "  - %q\n", p.command.positionals[positionalArgIndex].Name)
+		for ; positionalArgIndex < len(p.Root.Positionals); positionalArgIndex++ {
+			fmt.Fprintf(&sb, "  - %q\n", p.Root.Positionals[positionalArgIndex].Name)
 		}
 		return fmt.Errorf("%s", sb.String())
 	}
@@ -116,8 +126,18 @@ func (p *Parser) parseArgs(args []string) error {
 	return nil
 }
 
+func (p *Parser) AddSubcommand(name string, schema any) {
+	t := reflect.TypeOf(schema)
+	if t.Kind() != reflect.Pointer || t.Elem().Kind() != reflect.Struct {
+		panic("give type must be a pointer to a struct")
+	}
+
+	command := NewCommand(name, reflect.ValueOf(schema).Elem())
+	p.Subcommands = append(p.Subcommands, command)
+}
+
 func (p *Parser) ValueByIndex(index []int) reflect.Value {
-	return p.schema.FieldByIndex(index)
+	return p.Root.Schema.FieldByIndex(index)
 }
 
 func hasNext(args []string, i int) bool {
