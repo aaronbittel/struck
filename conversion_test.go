@@ -182,7 +182,7 @@ func TestConversionInt(t *testing.T) {
 			TypeInt32: true,
 			TypeInt64: true,
 		}},
-		{name: "<-i64", input: "-9223372036854775809", expectError: map[reflect.Type]bool{
+		{name: "less minInt64", input: "-9223372036854775809", expectError: map[reflect.Type]bool{
 			TypeInt8:  true,
 			TypeInt16: true,
 			TypeInt32: true,
@@ -229,7 +229,7 @@ func TestConversionInt(t *testing.T) {
 		{name: "greater maxInt32", input: "2147483648", want: 2147483648, expectErr: strconv.IntSize == 32},
 		{name: "less minInt32", input: "-2147483649", want: -2147483649, expectErr: strconv.IntSize == 32},
 		{name: "greater maxInt64", input: "9223372036854775808", expectErr: true},
-		{name: "<-i64", input: "-9223372036854775809", expectErr: true},
+		{name: "less minInt64", input: "-9223372036854775809", expectErr: true},
 		{name: "not a number", input: "asdf", expectErr: true},
 	}
 

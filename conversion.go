@@ -50,17 +50,17 @@ func SetValue(v reflect.Value, arg string) error {
 		}
 		v.SetBool(b)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		n64, err := parseInt(v.Kind(), arg)
+		i64, err := parseInt(v.Kind(), arg)
 		if err != nil {
 			return err
 		}
-		v.SetInt(n64)
+		v.SetInt(i64)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		nU64, err := parseUint(v.Kind(), arg)
+		u64, err := parseUint(v.Kind(), arg)
 		if err != nil {
 			return err
 		}
-		v.SetUint(nU64)
+		v.SetUint(u64)
 	case reflect.Float32, reflect.Float64:
 		f64, err := parseFloat(v.Kind(), arg)
 		if err != nil {
