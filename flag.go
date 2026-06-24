@@ -10,7 +10,6 @@ import (
 type Flag struct {
 	Long       string
 	Short      string
-	Type       reflect.Type
 	FieldIndex []int
 	Help       string
 }
@@ -19,7 +18,6 @@ func FlagFromField(field reflect.StructField) *Flag {
 	return &Flag{
 		Long:       field.Tag.Get(TagLong),
 		Short:      field.Tag.Get(TagShort),
-		Type:       field.Type,
 		FieldIndex: field.Index,
 		Help:       field.Tag.Get(TagHelp),
 	}
@@ -40,11 +38,6 @@ func (f Flag) String() string {
 	}
 	if f.Short != "" {
 		fmt.Fprintf(&sb, "short=%s ", f.Short)
-	}
-	if f.Type.Name() != "" {
-		fmt.Fprintf(&sb, "type=%s ", f.Type.Name())
-	} else {
-		fmt.Fprintf(&sb, "type=%s ", f.Type.Kind())
 	}
 	fmt.Fprintf(&sb, "index=%v ", f.FieldIndex)
 

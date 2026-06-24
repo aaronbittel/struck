@@ -12,7 +12,7 @@ import (
 
 type Parser struct {
 	command *Command
-	value   reflect.Value
+	schema  reflect.Value
 }
 
 func NewParser(schema any, name ...string) *Parser {
@@ -38,7 +38,7 @@ func NewParser(schema any, name ...string) *Parser {
 
 	return &Parser{
 		command: command,
-		value:   reflect.ValueOf(schema).Elem(),
+		schema:  reflect.ValueOf(schema).Elem(),
 	}
 }
 
@@ -67,8 +67,8 @@ func (p *Parser) parseArgs(args []string) error {
 		currentArg := args[i]
 		flag, ok := p.command.matchesFlag(currentArg)
 		if ok {
-			if flag.Type.Kind() == reflect.Bool {
-				p.value.FieldByIndex(flag.FieldIndex).SetBool(true)
+			if p.ValueByIndex(flag.FieldIndex).Kind() == reflect.Bool {
+				p.ValueByIndex(flag.FieldIndex).SetBool(true)
 				i++
 				continue
 			}
@@ -77,24 +77,11 @@ func (p *Parser) parseArgs(args []string) error {
 				return fmt.Errorf("TODO: value for flag %q not provided", flag.Name())
 			}
 
-			switch flag.Type.Kind() {
-			case reflect.String:
-				fieldValue := p.value.FieldByIndex(flag.FieldIndex)
-				fieldValue.SetString(args[i+1])
-				i += 2
-				continue
-			case reflect.Uint64:
-				n, err := strconv.ParseUint(args[i+1], 10, 64)
-				if err != nil {
-					return fmt.Errorf("TODO: could not parse int, got: %q", args[i+1])
-				}
-				fieldValue := p.value.FieldByIndex(flag.FieldIndex)
-				fieldValue.SetUint(n)
-				i += 2
-				continue
-			default:
-				panic(fmt.Sprintf("type %s is not yet supported", flag.Type.Kind()))
+			err := SetValue(p.ValueByIndex(flag.FieldIndex), args[i+1])
+			if err != nil {
+				return err
 			}
+			i += 2
 		} else {
 			if positionalArgIndex >= len(p.command.positionals) {
 				return fmt.Errorf("TODO: to manny positional arguments, arg=%q", currentArg)
@@ -108,23 +95,23 @@ func (p *Parser) parseArgs(args []string) error {
 				if err != nil {
 					return fmt.Errorf("TODO: could not parse f32: got %q", currentArg)
 				}
-				p.value.FieldByIndex(positionalArg.FieldIndex).SetFloat(f64)
+				p.ValueByIndex(positionalArg.FieldIndex).SetFloat(f64)
 			case reflect.Uint8:
 				if len(currentArg) == 1 && (currentArg[0] < '0' || currentArg[0] > '9') {
-					p.value.FieldByIndex(positionalArg.FieldIndex).SetUint(uint64(currentArg[0]))
+					p.ValueByIndex(positionalArg.FieldIndex).SetUint(uint64(currentArg[0]))
 				} else {
 					n, err := strconv.ParseUint(currentArg, 10, 8)
 					if err != nil {
 						return fmt.Errorf("TODO: could not parse int, got: %q", currentArg)
 					}
-					p.value.FieldByIndex(positionalArg.FieldIndex).SetUint(n)
+					p.ValueByIndex(positionalArg.FieldIndex).SetUint(n)
 				}
 			case reflect.Uint64:
 				n, err := strconv.ParseUint(currentArg, 10, 64)
 				if err != nil {
 					return fmt.Errorf("TODO: could not parse int, got: %q", currentArg)
 				}
-				p.value.FieldByIndex(positionalArg.FieldIndex).SetUint(n)
+				p.ValueByIndex(positionalArg.FieldIndex).SetUint(n)
 			default:
 				panic(fmt.Sprintf("type %s is not yet supported", positionalArg.Type.Kind()))
 			}
@@ -144,6 +131,10 @@ func (p *Parser) parseArgs(args []string) error {
 	}
 
 	return nil
+}
+
+func (p *Parser) ValueByIndex(index []int) reflect.Value {
+	return p.schema.FieldByIndex(index)
 }
 
 func hasNext(args []string, i int) bool {

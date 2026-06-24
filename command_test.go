@@ -23,11 +23,7 @@ func TestParseStructIntoCommand(t *testing.T) {
 			}](),
 			want: &Command{
 				flags: []*Flag{
-					{
-						Long:       "name",
-						Type:       StringType,
-						FieldIndex: []int{0},
-					},
+					{Long: "name", FieldIndex: []int{0}},
 				},
 			},
 		},
